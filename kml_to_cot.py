@@ -841,7 +841,6 @@ def process_kml_file(input_file, output_dir, prefix, debug=False):
                 point_elem = placemark.find('./Point')
             line_elem = placemark.find('./kml:LineString', namespaces=NAMESPACES) or placemark.find('./LineString')
             polygon_elem = placemark.find('./kml:Polygon', namespaces=NAMESPACES) or placemark.find('./Polygon')
-            multi_geom = placemark.find('./kml:MultiGeometry', namespaces=NAMESPACES) or placemark.find('./MultiGeometry')
             
             # Process based on geometry type
             if point_elem is not None:
@@ -872,41 +871,10 @@ def process_kml_file(input_file, output_dir, prefix, debug=False):
                         if coords:
                             cot_xml = create_cot_polygon(placemark_name, coords, (style_info, style_url), extended_data, uid_base)
             
-            elif multi_geom is not None:
-                # Process MultiGeometry - use the first geometry found
-                sub_point = multi_geom.find('./kml:Point', namespaces=NAMESPACES) or multi_geom.find('./Point')
-                sub_line = multi_geom.find('./kml:LineString', namespaces=NAMESPACES) or multi_geom.find('./LineString')
-                sub_polygon = multi_geom.find('./kml:Polygon', namespaces=NAMESPACES) or multi_geom.find('./Polygon')
-                
-                if sub_point is not None:
-                    coords = extract_coordinates(sub_point)
-                    if coords:
-                        cot_xml = create_cot_point(placemark_name, coords, (style_info, style_url), extended_data, uid_base)
-                
-                elif sub_line is not None:
-                    coords = extract_coordinates(sub_line)
-                    if coords:
-                        cot_xml = create_cot_line(placemark_name, coords, (style_info, style_url), extended_data, uid_base)
-                
-                elif sub_polygon is not None:
-                    outer_boundary = sub_polygon.find('./kml:outerBoundaryIs', namespaces=NAMESPACES)
-                    if outer_boundary is None:
-                        outer_boundary = sub_polygon.find('./outerBoundaryIs')
-                    
-                    if outer_boundary is not None:
-                        linear_ring = outer_boundary.find('./kml:LinearRing', namespaces=NAMESPACES)
-                        if linear_ring is None:
-                            linear_ring = outer_boundary.find('./LinearRing')
-                        
-                        if linear_ring is not None:
-                            coords = extract_coordinates(linear_ring)
-                            if coords:
-                                cot_xml = create_cot_polygon(placemark_name, coords, (style_info, style_url), extended_data, uid_base)
-            
             # Save CoT XML if generated
             if cot_xml:
                 safe_name = sanitize_filename(placemark_name)
-                output_file = os.path.join(output_dir, f"{prefix}_{safe_name}.xml")
+                output_file = os.path.join(output_dir, f"{prefix}_{safe_name}.cot")  # Change extension to .cot
                 
                 with open(output_file, 'w', encoding='utf-8') as f:
                     f.write(cot_xml)
