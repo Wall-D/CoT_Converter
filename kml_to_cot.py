@@ -381,100 +381,29 @@ def sanitize_html_content(content):
         print(f"Error sanitizing content: {e}")
         return "Invalid content"
 
-def create_cot_point(name, coords, style_info, extended_data, uid=None):
-    """Create a CoT XML for a point/marker with proper HTML handling."""
-    if not coords or len(coords) == 0:
-        return None
+def create_cot_point(name, coords, style_info, extended_data, uid_base):
+    """Create a CoT XML string for a Point geometry."""
+    lat, lon, hae = coords
+    uid = f"{uid_base}_point"
+    cot_xml = f"""<?xml version='1.0' encoding='UTF-8' standalone='yes'?>
+<event version='2.0' uid='{uid}' type='a-u-G' time='{get_current_time()}' start='{get_current_time()}' stale='{get_stale_time()}' how='h-g-i-g-o'>
+  <point lat='{lat}' lon='{lon}' hae='{hae}' ce='9999999.0' le='9999999.0' />
+  <detail>
+    <status readiness='true'/>
+    <remarks>{extended_data.get('description', '')}</remarks>
+    <color argb='{style_info[0].get("color", "-1")}'/>
+    <precisionlocation altsrc='???'/>
+    <usericon iconsetpath='{style_info[1]}'/>
+  </detail>
+</event>
+"""
+    return cot_xml
 
-    # Use first coordinate for point
-    lon, lat, alt = coords[0]
+# Ensure output files are saved with .cot extension
+output_file = os.path.join(output_dir, f"{prefix}_{safe_name}.cot")
 
-    # Generate a unique ID if not provided
-    if not uid:
-        uid = str(uuid.uuid4())
+# ...existing code...
 
-    # Create root event element
-    root = ET.Element('event')
-    root.set('version', '2.0')
-    root.set('uid', uid)
-    root.set('type', get_cot_type('point', style_info[1], extended_data))
-
-    # Set time attributes - current time plus 1 hour stale time
-    now = datetime.datetime.now(datetime.UTC)
-    stale_time = now + datetime.timedelta(hours=1)
-
-    time_str = now.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-    stale_str = stale_time.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-
-    root.set('time', time_str)
-    root.set('start', time_str)
-    root.set('stale', stale_str)
-    root.set('how', 'h-g-i-g-o')  # How: Human input, GPS, Internet, GPS, Other
-
-    # Add point information
-    point = ET.SubElement(root, 'point')
-    point.set('lat', str(lat))
-    point.set('lon', str(lon))
-    point.set('hae', str(alt))  # Height above ellipsoid
-    point.set('ce', '9999999.0')  # Circular error (not specified)
-    point.set('le', '9999999.0')  # Linear error (not specified)
-
-    # Add detail section
-    detail = ET.SubElement(root, 'detail')
-
-    # Add contact info
-    contact = ET.SubElement(detail, 'contact')
-    contact.set('callsign', name)
-
-    # Add color if available
-    color = None
-    if style_info[0].get('poly_color'):
-        color = get_cot_color(style_info[0].get('poly_color'))
-    elif style_info[0].get('line_color'):
-        color = get_cot_color(style_info[0].get('line_color'))
-
-    if color:
-        color_elem = ET.SubElement(detail, 'color')
-        color_elem.set('value', color)
-
-    # Add remarks with description if available - FIXED HTML HANDLING
-    if 'description' in extended_data and extended_data['description']:
-        remarks = ET.SubElement(detail, 'remarks')
-        remarks.text = sanitize_html_content(extended_data['description'])
-
-    # Add extended data as userdata - FIXED HTML HANDLING
-    if extended_data:
-        userdata = ET.SubElement(detail, 'userdata')
-        for key, value in extended_data.items():
-            if key != 'description':  # Description is already in remarks
-                try:
-                    # Create element with sanitized key name (no spaces)
-                    data_elem = ET.SubElement(userdata, key.replace(' ', '_'))
-
-                    # Clean HTML tags from value and handle entities properly
-                    if isinstance(value, str):
-                        # Fix: Similar safe handling of HTML content
-                        text_content = re.sub(r'<[^>]+>', ' ', value)
-                        unescaped = html.unescape(text_content)
-                        data_elem.text = unescaped.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;').replace("'", '&apos;')
-                    else:
-                        data_elem.text = str(value)
-                except Exception as e:
-                    print(f"Error processing extended data for {key}: {e}")
-
-    # Use a string-based XML serialization to avoid XML declaration issues
-    try:
-        # Format the XML string with pretty printing
-        rough_string = ET.tostring(root, 'utf-8')
-        parsed = minidom.parseString(rough_string)
-        pretty_xml = parsed.toprettyxml(indent="  ")
-        return pretty_xml
-    except Exception as e:
-        print(f"Error serializing XML for {name}: {e}")
-        print("Extended data:", extended_data)
-        print("Coordinates:", coords)
-        return None
-    
 def create_cot_line(name, coords, style_info, extended_data, uid=None):
     """Create a CoT XML for a line/route with proper HTML handling."""
     if not coords or len(coords) < 2:
@@ -766,14 +695,13 @@ def create_cot_point_simple(name, coords, uid=None):
 def process_kml_file(input_file, output_dir, prefix, debug=False):
     """Process a KML file and convert all placemarks to CoT format."""
     try:
+        # Ensure the output directory exists
+        os.makedirs(output_dir, exist_ok=True)
+        
         # Parse the input KML file
         parser = etree.XMLParser(recover=True, remove_blank_text=True, resolve_entities=False)
-        try:
-            tree = etree.parse(input_file, parser)
-            root = tree.getroot()
-        except etree.XMLSyntaxError as e:
-            print(f"Error parsing KML file: {e}")
-            return
+        tree = etree.parse(input_file, parser)
+        root = tree.getroot()
         
         # Get the main document
         doc = root.find('.//kml:Document', namespaces=NAMESPACES)
@@ -804,9 +732,6 @@ def process_kml_file(input_file, output_dir, prefix, debug=False):
             return
         
         print(f"Found {len(placemarks)} placemarks in {input_file}")
-        
-        # Create output directory if it doesn't exist
-        os.makedirs(output_dir, exist_ok=True)
         
         # Process each placemark
         for i, placemark in enumerate(placemarks):
@@ -884,95 +809,23 @@ def process_kml_file(input_file, output_dir, prefix, debug=False):
                 print(f"Warning: Could not create CoT for {placemark_name}")
         
         print(f"Conversion completed. CoT files saved to {output_dir}")
-        
     except Exception as e:
         print(f"Error processing KML file: {e}")
         if debug:
             import traceback
             traceback.print_exc()
 
-def process_kml_simple(input_file, output_dir, prefix):
-    """Process a KML file and convert all placemarks to simplified CoT format."""
-    try:
-        # Parse the input KML file
-        parser = etree.XMLParser(recover=True, remove_blank_text=True, resolve_entities=False)
-        tree = etree.parse(input_file, parser)
-        root = tree.getroot()
-
-        # Get the main document
-        doc = root.find('.//kml:Document', namespaces=NAMESPACES)
-        if doc is None:
-            doc = root.find('.//Document')
-
-        if doc is None:
-            raise ValueError("No Document element found in the KML file")
-
-        # Find all placemarks
-        placemarks = doc.findall('.//kml:Placemark', namespaces=NAMESPACES)
-        if not placemarks:
-            placemarks = doc.findall('.//Placemark')
-
-        if not placemarks:
-            print(f"No placemarks found in {input_file}")
-            return
-
-        print(f"Found {len(placemarks)} placemarks in {input_file}")
-
-        # Create output directory if it doesn't exist
-        os.makedirs(output_dir, exist_ok=True)
-
-        # Process each placemark
-        for i, placemark in enumerate(placemarks):
-            # Get placemark name
-            placemark_name = None
-            name_elem = placemark.find('./kml:name', namespaces=NAMESPACES)
-            if name_elem is None:
-                name_elem = placemark.find('./name')
-
-            if name_elem is not None and name_elem.text:
-                placemark_name = name_elem.text
-            else:
-                placemark_name = f"placemark_{i+1}"
-
-            print(f"Processing placemark: {placemark_name}")
-
-            # Extract coordinates
-            point_elem = placemark.find('./kml:Point', namespaces=NAMESPACES)
-            if point_elem is None:
-                point_elem = placemark.find('./Point')
-
-            if point_elem is not None:
-                coords = extract_coordinates(point_elem)
-                if coords:
-                    cot_xml = create_cot_point_simple(placemark_name, coords)
-
-                    # Save CoT XML if generated
-                    if cot_xml:
-                        safe_name = sanitize_filename(placemark_name)
-                        output_file = os.path.join(output_dir, f"{prefix}_{safe_name}.xml")
-
-                        with open(output_file, 'w', encoding='utf-8') as f:
-                            f.write(cot_xml)
-
-                        print(f"Created CoT file: {output_file}")
-                    else:
-                        print(f"Warning: Could not create CoT for {placemark_name}")
-
-    except Exception as e:
-        print(f"Error processing KML file: {e}")
-
 def main():
     """Main entry point for the script."""
     parser = argparse.ArgumentParser(description='Convert KML to CoT format for ATAK')
     parser.add_argument('input_file', help='KML file to convert')
-    parser.add_argument('--output', dest='output_dir', default='.',
-                      help='Directory to save output files (default: current directory)')
     parser.add_argument('--prefix', dest='prefix', default=None,
-                      help='Prefix for output filenames (default: based on input filename)')
+                        help='Prefix for output filenames (default: based on input filename)')
     parser.add_argument('--debug', action='store_true', help='Show detailed diagnostic information')
     parser.add_argument('--force', action='store_true', help='Attempt to repair malformed KML files')
     args = parser.parse_args()
     
+    # Check if the input file exists
     if not os.path.exists(args.input_file):
         print(f"Error: File '{args.input_file}' not found.")
         sys.exit(1)
@@ -982,22 +835,39 @@ def main():
         # Use basename without extension
         args.prefix = os.path.splitext(os.path.basename(args.input_file))[0]
     
-    print(f"Processing: {args.input_file}")
-    print(f"Output directory: {args.output_dir}")
-    print(f"Prefix: {args.prefix}")
+    # Set default output directory to "converted_files" in the current directory
+    output_dir = os.path.join(os.getcwd(), "converted_files")
     
+    # Debugging: Print the output directory
+    if args.debug:
+        print(f"Debug: Output directory is set to '{output_dir}'")
+    
+    # Create the output directory if it doesn't exist
+    try:
+        os.makedirs(output_dir, exist_ok=True)
+    except Exception as e:
+        print(f"Error: Could not create output directory '{output_dir}': {e}")
+        sys.exit(1)
+
+    print(f"Processing: {args.input_file}")
+    print(f"Output directory: {output_dir}")
+    print(f"Prefix: {args.prefix}")
+
     # Run diagnostics if requested
     if args.debug:
-        diagnose_kml(args.input_file)
+        diagnose_kml(args.input_file, debug=args.debug)
     
     # Try to repair the file if requested
     input_file = args.input_file
     if args.force:
         input_file = attempt_repair(args.input_file)
-    
-    # Process the KML file
-    process_kml_file(input_file, args.output_dir, args.prefix, args.debug)
-    process_kml_simple(input_file, args.output_dir, args.prefix)
 
-if __name__ == "__main__":
-    main()
+    # Process the KML file
+    try:
+        process_kml_file(input_file, output_dir, args.prefix, args.debug)
+    except Exception as e:
+        print(f"Error: Failed to process KML file: {e}")
+        if args.debug:
+            import traceback
+            traceback.print_exc()
+        sys.exit(1)
