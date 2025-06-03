@@ -1,18 +1,21 @@
-[project]
-name = "cot_converter"
-version = "0.1.0"
-description = "Converts various files to Cursor on Target files for the TAK system."
-authors = [
-    {name = "None"}
-]
-license = {text = "MIT"}
-readme = "README.md"
-requires-python = "3.12.3"
-dependencies = [
-    "lxml (>=5.4.0,<6.0.0)",
-]
-
-
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "cot_converter"
+version = "0.1.0"
+description = "A tool to convert KML to CoT format"
+authors = ["John Doe <john.doe@example.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [
+    { include = "CoT_Converter" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+lxml = "^5.4.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.0"
