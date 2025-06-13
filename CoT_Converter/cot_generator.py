@@ -95,44 +95,27 @@ def process_placemarks(placemarks, output_dir, prefix, debug=False):
         linestring_elem = placemark.find('.//kml:LineString', namespaces=NAMESPACES)
         
         cot_xml = None
+        uid = generate_uid()  # Generate a unique UID for the CoT file
         
         if polygon_elem is not None:
             coords = extract_polygon_coordinates(polygon_elem)
             if coords:
-                # Check if it's a rectangle by analyzing the shape
-                is_rectangle = len(coords) == 5 and coords[0] == coords[-1]  # First and last points match
-                if is_rectangle:
-                    cot_xml = create_cot_rectangle(placemark_name, coords, prefix)
-                else:
-                    cot_xml = create_cot_polygon(placemark_name, coords, prefix)
+                cot_xml = create_cot_polygon(placemark_name, coords, prefix)
                 
         elif point_elem is not None:
             coords = extract_coordinates(point_elem)
             if coords:
-                # Check for different point types based on style or description
-                style_url = placemark.find('.//kml:styleUrl', namespaces=NAMESPACES)
-                if style_url is not None and 'spot' in style_url.text.lower():
-                    cot_xml = create_cot_point(placemark_name, coords, prefix, icon_type='b-m-p-s-m')
-                else:
-                    cot_xml = create_cot_point(placemark_name, coords, prefix)
+                cot_xml = create_cot_point(placemark_name, coords, prefix)
                 
         elif linestring_elem is not None:
             coords = extract_coordinates(linestring_elem)
             if coords:
-                # Check if it's a route by analyzing style or description
-                style_url = placemark.find('.//kml:styleUrl', namespaces=NAMESPACES)
-                if style_url is not None and 'route' in style_url.text.lower():
-                    checkpoints = {}  # You might want to extract checkpoint names from the KML
-                    cot_xml = create_cot_route(placemark_name, coords, checkpoints, prefix)
-                else:
-                    cot_xml = create_cot_linestring(placemark_name, coords, prefix)
+                cot_xml = create_cot_linestring(placemark_name, coords, prefix)
         
-        if cot_xml is None:
-            if debug:
-                print(f"Error: Failed to generate CoT XML for placemark: {placemark_name}")
-            continue
-        
-        save_cot_file(cot_xml, output_dir, prefix, placemark_name)
+        if cot_xml:
+            save_cot_file(cot_xml, output_dir, uid, placemark_name)
+        elif debug:
+            print(f"Warning: No supported geometry found for placemark: {placemark_name}")
 
 def create_cot_point(name, coords, prefix, icon_type='a-u-G'):
     """Create CoT XML for a point."""
@@ -305,10 +288,10 @@ def create_cot_route(name, coordinates, checkpoints, prefix):
     </detail>
 </event>"""
 
-def save_cot_file(cot_xml, output_dir, prefix, name):
-    """Save CoT XML to a file."""
-    safe_name = sanitize_filename(name)
-    output_file = os.path.join(output_dir, f"{prefix}_{safe_name}.cot")
+def save_cot_file(cot_xml, output_dir, uid, callsign):
+    """Save CoT XML to a file using UID as the filename."""
+    safe_uid = sanitize_filename(uid)  # Ensure UID is safe for filenames
+    output_file = os.path.join(output_dir, f"{safe_uid}.cot")
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write(cot_xml)
     print(f"Created CoT file: {output_file}")
