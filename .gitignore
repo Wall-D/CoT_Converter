@@ -56,6 +56,8 @@ cover/
 *.pot
 *.kml
 *.cot
+*.zip
+
 
 # Django stuff:
 *.log
