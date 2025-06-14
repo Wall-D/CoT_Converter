@@ -277,7 +277,10 @@ def process_kml_file(input_file, debug=False):
 
                 # Save to a new file
                 safe_name = sanitize_filename(element_name)
-                output_file = save_kml_file(new_root, f"{safe_name}.kml")
+                # Save KML file relative to the script's location
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+                output_file = os.path.join(script_dir, f"{safe_name}.kml")
+                save_kml_file(new_root, output_file)
                 print(f"Created: {output_file}")
 
             print("All elements have been successfully extracted to individual KML files.")
@@ -317,7 +320,10 @@ def process_kml_file(input_file, debug=False):
 
                 # Save to a new file
                 safe_name = sanitize_filename(folder_name)
-                output_file = save_kml_file(new_root, f"{safe_name}.kml")
+                # Save KML file relative to the script's location
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+                output_file = os.path.join(script_dir, f"{safe_name}.kml")
+                save_kml_file(new_root, output_file)
                 print(f"Created: {output_file}")
             except Exception as e:
                 print(f"Error processing folder '{folder_name}': {e}")

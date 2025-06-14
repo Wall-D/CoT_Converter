@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MissionPackageManifest version="2">
+   <Configuration>
+      <Parameter name="name" value="NTC IPB"/>
+      <Parameter name="uid" value="f5b4b278-11d0-480b-9ac9-163773cf6fc4"/>
+   </Configuration>
+   <Contents>
+      <Content ignore="false" zipEntry="files/85eca462ff904e3898e53cf734b3f68acace985ea4083a5d3e4e9ed780dee859/All_Cities.kml">
+         <Parameter name="visible" value="true"/>
+      </Content>
+      <Content ignore="false" zipEntry="files/3beb45b68a0e0f5cf1fa132675f5dd5b891b6e1af5fdab16a363fcebc127f0d2/sofboundaries.kml">
+         <Parameter name="visible" value="false"/>
+      </Content>
+      <Content ignore="false" zipEntry="files/1b3f142582d692f61be7f556359b92811f09b70d1eca00b4383b2162bf05020b/Town.kml">
+         <Parameter name="visible" value="true"/>
+      </Content>
+      <Content ignore="false" zipEntry="files/9923ad1c38805b21747c7ede57d4691a596703670e3f333c319572d1d21664f5/Phaselines.kml">
+         <Parameter name="visible" value="false"/>
+      </Content>
+      <Content ignore="false" zipEntry="map-items/a93cb91efc13cbb870a897a72eac0e101ce689a5d3ef39ef81d290f9f8361386/a4ab1d29-c2c4-4505-9600-802154b7d385.cot">
+         <Parameter name="uid" value="a4ab1d29-c2c4-4505-9600-802154b7d385"/>
+         <Parameter name="name" value="DTG Support Zone"/>
+      </Content>
+      <Content ignore="false" zipEntry="map-items/57c87ba9de76ab4ee751d2ec39323ca87ed91d8372d36d8aabb0eeceb39667fb/d0cbd88e-9aed-41bf-85af-358122cb8191.cot">
+         <Parameter name="uid" value="d0cbd88e-9aed-41bf-85af-358122cb8191"/>
+         <Parameter name="name" value="DTG Distruption Zone"/>
+      </Content>
+      <Content ignore="false" zipEntry="map-items/fc89defcaac22f27f7114f1943d6104623a0281fda16d0d758c7401b2785e584/4c9a8709-6c2b-41c7-8c62-4bb24ecc18e2.cot">
+         <Parameter name="uid" value="4c9a8709-6c2b-41c7-8c62-4bb24ecc18e2"/>
+         <Parameter name="name" value="BTG Disruption Zone"/>
+      </Content>
+      <Content ignore="false" zipEntry="map-items/4565154d98711e39edbc46531cc9b2b4f880b10766736f27ae0a86560354a09a/ad4002f9-840f-4513-951f-880d87d926a3.cot">
+         <Parameter name="uid" value="ad4002f9-840f-4513-951f-880d87d926a3"/>
+         <Parameter name="name" value="Battle Zone"/>
+      </Content>
+      <Content ignore="false" zipEntry="map-items/a73747952626fbdbcb9d0dad6c57366e3103d0de523f56d5c718b7bb356eef42/a4ab1d29-c2c4-4505-9600-802154b7d385.cot">
+         <Parameter name="uid" value="a4ab1d29-c2c4-4505-9600-802154b7d385"/>
+         <Parameter name="name" value="DTG Support Zone"/>
+      </Content>
+      <Content ignore="false" zipEntry="db5f0750-0965-476d-ba72-146d0069c04e/db5f0750-0965-476d-ba72-146d0069c04e.cot">
+         <Parameter name="uid" value="db5f0750-0965-476d-ba72-146d0069c04e"/>
+         <Parameter name="name" value="OPS BOX B"/>
+      </Content>
+      <Content ignore="false" zipEntry="8f11892d-aa04-4db2-aa8b-64f0c0fe3154/8f11892d-aa04-4db2-aa8b-64f0c0fe3154.cot">
+         <Parameter name="uid" value="8f11892d-aa04-4db2-aa8b-64f0c0fe3154"/>
+         <Parameter name="name" value="OPS BOX A"/>
+      </Content>
+   </Contents>
+</MissionPackageManifest>
