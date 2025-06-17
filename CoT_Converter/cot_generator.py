@@ -179,7 +179,7 @@ def create_cot_polygon(name, coordinates, prefix):
     </detail>
 </event>"""
 
-def create_cot_linestring(name, coordinates, prefix):
+def create_cot_linestring(name, coordinates, prefix, remarks=""):
     """Create CoT XML for a LineString."""
     if not coordinates:
         return None
@@ -191,24 +191,32 @@ def create_cot_linestring(name, coordinates, prefix):
     current_time = get_current_time()
     stale_time = get_stale_time(hours=24)  # 24 hour stale time for shapes
 
-    # Build link points for the LineString path
+    # Build link points for the LineString path with proper attributes
     link_points = []
-    for coord in coordinates:
-        link_points.append(f'        <link point="{coord[0]},{coord[1]},{coord[2]}"/>')
+    for i, coord in enumerate(coordinates):
+        link_uid = generate_uid()
+        # First and last points are waypoints (b-m-p-w), middle points are checkpoints (b-m-p-c)
+        link_type = 'b-m-p-w' if i == 0 or i == len(coordinates) - 1 else 'b-m-p-c'
+        link_callsign = f'WP{i+1}' if i == 0 or i == len(coordinates) - 1 else ''
+        
+        link_points.append(f'        <link uid="{link_uid}" callsign="{link_callsign}" type="{link_type}" point="{coord[0]},{coord[1]},{coord[2]}" remarks="" relation="c"/>')
 
     return f"""<?xml version='1.0' encoding='UTF-8' standalone='yes'?>
-<event version='2.0' uid='{uid}' type='u-d-l' time='{current_time}' start='{current_time}' stale='{stale_time}' how='h-e'>
+<event version='2.0' uid='{uid}' type='b-m-r' time='{current_time}' start='{current_time}' stale='{stale_time}' how='h-e'>
     <point lat='{lat}' lon='{lon}' hae='{hae}' ce='9999999.0' le='9999999.0' />
     <detail>
 {chr(10).join(link_points)}
-        <strokeColor value='-1'/>
+        <strokeColor value='-16777216'/>
         <strokeWeight value='3.0'/>
-        <contact callsign='{name}'/>
-        <remarks></remarks>
-        <archive/>
+        <strokeStyle value='solid'/>
         <labels_on value='false'/>
-        <color value='-1'/>
-        <precisionlocation altsrc='???'/>
+        <__routeinfo>
+            <__navcues/>
+        </__routeinfo>
+        <remarks>{remarks}</remarks>
+        <contact callsign='{name}'/>
+        <color value='-16777216'/>
+        <archive/>
     </detail>
 </event>"""
 
